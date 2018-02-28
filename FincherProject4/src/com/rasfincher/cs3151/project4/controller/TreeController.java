@@ -2,10 +2,14 @@ package com.rasfincher.cs3151.project4.controller;
 
 import java.io.File;
 import java.io.FileNotFoundException;
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.Objects;
 import java.util.Scanner;
 
 import com.rasfincher.cs3151.project4.model.BinarySearchTree;
+import com.rasfincher.cs3151.project4.model.WordFrequencyAnalyzer;
+
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.scene.control.MenuItem;
@@ -95,9 +99,14 @@ public class TreeController {
     	this.treeSizeTextArea.setText(Integer.toString(this.getSearchTree().size()));
     	this.leafCountTextArea.setText(Integer.toString(this.getSearchTree().leafCount()));
     	this.outputTextBox.setText("");
+    	ArrayList<String> words = new ArrayList<String>();
     	for (String currentString : this.getSearchTree()) {
-    		this.outputTextBox.appendText(currentString + System.lineSeparator());
-    	}
+        words.add(currentString.toLowerCase());
+      }
+    	WordFrequencyAnalyzer analyzer = new WordFrequencyAnalyzer(words);
+    	this.outputTextBox.setText("Words and the number of times they appear" + System.lineSeparator());
+    	this.outputTextBox.appendText(analyzer.getWordFrequencyData());
+    	
     }
 
 	/**
