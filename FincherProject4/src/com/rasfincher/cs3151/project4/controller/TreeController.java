@@ -2,6 +2,7 @@ package com.rasfincher.cs3151.project4.controller;
 
 import java.io.File;
 import java.io.FileNotFoundException;
+import java.util.Objects;
 import java.util.Scanner;
 
 import com.rasfincher.cs3151.project4.model.BinarySearchTree;
@@ -108,16 +109,37 @@ public class TreeController {
 		return inputFile;
 	}
 
+  /**
+   * Sets the input file
+   * 
+   * @precondition inputFile != null
+   * @postcondition this.inputFile = inputFile
+   * 
+   * @param inputFile
+   */
 	public void setInputFile(File inputFile) {
-		this.inputFile = inputFile;
+		this.inputFile = Objects.requireNonNull(inputFile);
 	}
 	
+	/**
+	 * Gets the search tree
+	 * 
+	 * @return the search tree
+	 */
 	public BinarySearchTree<String> getSearchTree() {
 		return this.searchTree;
 	}
 
+	/**
+	 * Sets the search tree
+	 * 
+	 * @precondition searchTree != null
+	 * @postcondition this.searchTree = searchTree;
+	 * 
+	 * @param searchTree
+	 */
 	private void setSearchTree(BinarySearchTree<String> searchTree) {
-		this.searchTree = searchTree;
+		this.searchTree = Objects.requireNonNull(searchTree);
 	}
 
 }
