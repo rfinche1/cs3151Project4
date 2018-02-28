@@ -99,7 +99,12 @@ public class TreeController {
     	}
     }
 
-	public File getInputFile() {
+	/**
+	 * Gets the input file
+	 * 
+	 * @return the input file
+	 */
+  public File getInputFile() {
 		return inputFile;
 	}
 
