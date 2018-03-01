@@ -3,6 +3,7 @@ package com.rasfincher.cs3151.project4.controller;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Objects;
 import java.util.Scanner;
@@ -103,6 +104,7 @@ public class TreeController {
     	for (String currentString : this.getSearchTree()) {
         words.add(currentString.toLowerCase());
       }
+    	Collections.sort(words);
     	WordFrequencyAnalyzer analyzer = new WordFrequencyAnalyzer(words);
     	this.outputTextBox.setText("Words and the number of times they appear" + System.lineSeparator());
     	this.outputTextBox.appendText(analyzer.getWordFrequencyData());
