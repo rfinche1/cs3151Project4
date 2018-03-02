@@ -1,31 +1,47 @@
 package com.rasfincher.cs3151.project4.controller;
 
 import java.io.File;
-import java.io.FileNotFoundException;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Objects;
 import java.util.Scanner;
 
 import com.rasfincher.cs3151.project4.model.BinarySearchTree;
+import com.rasfincher.cs3151.project4.model.RedBlackTree;
+
+import javafx.application.Platform;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
+import javafx.scene.control.Button;
 import javafx.scene.control.MenuItem;
 import javafx.scene.control.TextArea;
 import javafx.scene.control.TextField;
-import javafx.scene.control.Alert;
-import javafx.scene.control.Alert.AlertType;
+import javafx.stage.DirectoryChooser;
 import javafx.stage.FileChooser;
-import javafx.stage.FileChooser.ExtensionFilter;
 import javafx.stage.Stage;
 
 public class TreeController {
-  private File inputFile;
-  private BinarySearchTree<String> searchTree;
-
-	@FXML
-    private MenuItem openMenuItem;
+    private static final String TEXT_FILE = ".txt";
+    private static final char DELIMITER = ',';
+    private File directory;
+    private List<File> files;
+    private BinarySearchTree<String> bsTree;
+    private RedBlackTree<String> rbTree;
+    private StringBuilder outputString;
 
     @FXML
-    private MenuItem closeMenuItem;
+    private MenuItem openMenuItem;
+	
+    @FXML
+    private MenuItem saveMenuItem;
+    
+    @FXML
+    private Button exportButton;
+    
+    @FXML
+    private MenuItem clearMenuItem;
 
     @FXML
     private MenuItem preferencesMenuItem;
@@ -45,101 +61,164 @@ public class TreeController {
     @FXML
     private TextField leafCountTextArea;
     
+    
     @FXML
     void chooseInputFile(ActionEvent event) {
-    	File chosenFile = this.displayFileChooser();
+      File chosenDirectory = this.displayOpenChooser();
     	
-    	if (chosenFile == null) {
-    		return;
-    	} else {
-    		this.setInputFile(chosenFile);
-        	this.scanInputFile();
-        	this.displayOutput();
-    	}
+    	if (chosenDirectory != null) {
+    	  this.setDirectory(chosenDirectory);
+    	} 
+    	
+    	this.addInputFiles(this.getDirectory());
+    	try {
+        this.scanInputFiles();
+      } catch (IOException e) {
+        // TODO Auto-generated catch block
+        e.printStackTrace();
+      }
+    	this.outputTextBox.setText("Filename,BSTreeSize,BSTreeHeight,BSTreeLeafCount,RBTreeSize,RBTreeHeight,RBTreeLeafCount"
+    	    + System.lineSeparator());
+    	this.outputTextBox.appendText(this.outputString.toString());
+    	
+    	this.enableExportButtons();
     }
 
-    private File displayFileChooser() {
-      FileChooser chooser = new FileChooser();
-    	chooser.setTitle("Choose a text file to analyze.");
-    	chooser.getExtensionFilters().addAll(
-                new ExtensionFilter("Text Files", "*.txt"));
+    @FXML
+    void exportFile(ActionEvent event) {
+      FileChooser chooser = displayExportChooser();
+      File file = chooser.showSaveDialog(new Stage());
+      
+      this.saveFile(file);
+    }
+    
+    @FXML
+    void clear(ActionEvent event) {
+      this.files.clear();
+      this.outputString = new StringBuilder();
+      this.outputTextBox.setText("No data loaded. Loading data may take some time, please be patient.");
+      this.disableExportButtons();
+    }
+    
+    @FXML
+    void onQuitMenuItem(ActionEvent event) {
+      Platform.exit();
+    }
+    
+    /**
+     * Default constructor for a TreeController
+     * 
+     */
+    
+    public TreeController() {
+      this.files = new ArrayList<File>();
+      this.outputString = new StringBuilder();
+    }
+    
+    private void enableExportButtons() {
+      this.exportButton.setDisable(false);
+      this.saveMenuItem.setDisable(false);
+    }
+    
+    private void disableExportButtons() {
+      this.exportButton.setDisable(true);
+      this.saveMenuItem.setDisable(true);
+    }
+    
+    private void addInputFiles(File file) {
+      for (File currentFile : file.listFiles()) {
+        if (currentFile.getName().endsWith(TEXT_FILE)) {
+            this.getFiles().add(currentFile);
+        }
+        if (currentFile.isDirectory()) {
+          this.addInputFiles(currentFile);
+        }
+      }
+    }
+
+    private File displayOpenChooser() {
+      DirectoryChooser chooser = new DirectoryChooser();
+    	chooser.setTitle("Choose a folder of text files to analyze.");
     	String userDirectoryString = System.getProperty("user.home");
     	File userDirectory = new File(userDirectoryString);
     	chooser.setInitialDirectory(userDirectory);
     	
-    	File chosenFile = chooser.showOpenDialog(new Stage());
+    	File chosenFile = chooser.showDialog(new Stage());
       return chosenFile;
     }
     
-    private void scanInputFile() {
-    	Scanner scanner;
-    	this.setSearchTree(new BinarySearchTree<String>());
-    	try {
-			scanner = new Scanner(this.getInputFile());
-			  while(scanner.hasNext()) {
-			    this.getSearchTree().add(scanner.next());
-			  }
-			scanner.close();
-			}
-    	
-    	catch (FileNotFoundException e) {
-			e = new FileNotFoundException("File was not found.");
-			Alert alert = new Alert(AlertType.ERROR);
-			alert.setHeaderText("File Not Found");
-			alert.setContentText(e.getMessage());
-		  }
+    private FileChooser displayExportChooser() {
+      FileChooser.ExtensionFilter txtFilter = 
+          new FileChooser.ExtensionFilter("Text files (*.txt)", "*.txt");
+      FileChooser.ExtensionFilter csvFilter = 
+          new FileChooser.ExtensionFilter("CSV files (*.csv)", "*.csv");
+      
+      FileChooser chooser = new FileChooser();
+      chooser.getExtensionFilters().add(txtFilter);
+      chooser.getExtensionFilters().add(csvFilter);
+      chooser.setInitialFileName("treeComparison.csv");
+      return chooser;
+    }
+
+    private void saveFile(File file) {
+      if (file != null) {
+        try {
+          FileWriter writer = new FileWriter(file);
+          writer.write(this.outputTextBox.getText());
+          writer.close();
+        } catch (IOException e) {
+          e.printStackTrace();
+        }
+      }
     }
     
-    private void displayOutput() {
-    	this.treeHeightTextArea.setText(Integer.toString(this.getSearchTree().height()));
-    	this.treeSizeTextArea.setText(Integer.toString(this.getSearchTree().size()));
-    	this.leafCountTextArea.setText(Integer.toString(this.getSearchTree().leafCount()));
-    	this.outputTextBox.setText("");
-    	for (String currentString : this.getSearchTree()) {
-    		this.outputTextBox.appendText(currentString + System.lineSeparator());
+    private void generateTreeOutput(BinarySearchTree<String> bsTree, RedBlackTree<String> rbTree, File file) {
+      this.outputString.append(file.getName() + DELIMITER + bsTree.size() + DELIMITER + bsTree.height() + 
+                DELIMITER + bsTree.leafCount() + DELIMITER + rbTree.size() + DELIMITER + rbTree.height() + 
+                DELIMITER + rbTree.leafCount() + System.lineSeparator());
+    }
+    
+    private void scanInputFiles() throws IOException{
+    	Scanner scanner;
+    	
+      for (File currentFile : this.getFiles()) {
+    	  scanner = new Scanner(currentFile);
+    	  this.bsTree = new BinarySearchTree<String>();
+    	  this.rbTree = new RedBlackTree<String>();
+    	  
+    	  while (scanner.hasNext()) {
+    	    String token = scanner.next();
+    	    this.bsTree.add(token);
+    	    this.rbTree.add(token);
+    	  }
+    	  this.generateTreeOutput(bsTree, rbTree, currentFile);
+    	  scanner.close();
     	}
     }
+    
+    public List<File> getFiles() {
+      return this.files;
+    }
 
-	/**
-	 * Gets the input file
-	 * 
-	 * @return the input file
-	 */
-  public File getInputFile() {
-		return inputFile;
-	}
+    /**
+     * Gets the input file
+     * 
+     * @return the input file
+     */
+    public File getDirectory() {
+      return directory;
+    }
 
-  /**
-   * Sets the input file
-   * 
-   * @precondition inputFile != null
-   * @postcondition this.inputFile = inputFile
-   * 
-   * @param inputFile
-   */
-	public void setInputFile(File inputFile) {
-		this.inputFile = Objects.requireNonNull(inputFile);
-	}
-	
-	/**
-	 * Gets the search tree
-	 * 
-	 * @return the search tree
-	 */
-	public BinarySearchTree<String> getSearchTree() {
-		return this.searchTree;
-	}
-
-	/**
-	 * Sets the search tree
-	 * 
-	 * @precondition searchTree != null
-	 * @postcondition this.searchTree = searchTree;
-	 * 
-	 * @param searchTree
-	 */
-	private void setSearchTree(BinarySearchTree<String> searchTree) {
-		this.searchTree = Objects.requireNonNull(searchTree);
-	}
+   /**
+    * Sets the input file
+    * 
+    * @precondition inputFile != null
+    * @postcondition this.inputFile = inputFile
+    * 
+    * @param directory
+    */
+    public void setDirectory(File directory) {
+      this.directory = Objects.requireNonNull(directory);
+    }
 
 }
